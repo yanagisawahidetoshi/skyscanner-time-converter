@@ -1,0 +1,12 @@
+{
+  "name": "skyscanner-time-converter",
+  "version": "1.0.0",
+  "description": "Convert Skyscanner flight times to JST",
+  "scripts": {
+    "build": "cp node_modules/date-fns/index.js date-fns.js && cp node_modules/date-fns-tz/index.js date-fns-tz.js"
+  },
+  "dependencies": {
+    "date-fns": "^3.0.0",
+    "date-fns-tz": "^2.0.0"
+  }
+}

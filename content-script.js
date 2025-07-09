@@ -54,42 +54,83 @@
     return codeMatch ? codeMatch[0] : null;
   }
 
-  // 時間を日本時間に変換する関数
+  // 時間を日本時間に変換する関数（シンプルな時差計算版）
   function convertToJapanTime(timeString, airportCode) {
-    const timezone = AIRPORT_TIMEZONES[airportCode];
-    if (!timezone) {
+    // 主要空港の日本時間に対する時差（分単位）
+    // 正の値：日本より進んでいる、負の値：日本より遅れている
+    const TIMEZONE_OFFSETS = {
+      // 日本（時差なし）
+      'NRT': 0, 'HND': 0, 'KIX': 0, 'NGO': 0, 'FUK': 0, 'OKA': 0,
+      
+      // フィリピン（日本より1時間遅れ = -1時間）
+      'MNL': -60, 'CEB': -60, 'DVO': -60, 'CRK': -60,
+      
+      // タイ（日本より2時間遅れ = -2時間）
+      'BKK': -120, 'DMK': -120, 'HKT': -120, 'CNX': -120,
+      
+      // シンガポール・マレーシア（日本より1時間遅れ = -1時間）
+      'SIN': -60, 'KUL': -60,
+      
+      // 中国・香港・台湾（日本より1時間遅れ = -1時間）
+      'PEK': -60, 'PVG': -60, 'HKG': -60, 'TPE': -60,
+      
+      // 韓国（時差なし）
+      'ICN': 0, 'GMP': 0, 'PUS': 0,
+      
+      // ベトナム（日本より2時間遅れ = -2時間）
+      'SGN': -120, 'HAN': -120, 'DAD': -120,
+      
+      // インドネシア
+      'CGK': -120, // ジャカルタ（日本より2時間遅れ）
+      'DPS': -60,  // バリ（日本より1時間遅れ）
+    };
+
+    const offset = TIMEZONE_OFFSETS[airportCode];
+    if (offset === undefined) {
       log(`Unknown airport code: ${airportCode}`);
-      return timeString;
+      return null;
+    }
+
+    // 既に日本時間の空港は変換しない
+    if (offset === 0) {
+      log(`${airportCode} is already in JST`);
+      return null;
     }
 
     const parsedTime = parseTimeString(timeString);
     if (!parsedTime) {
       log(`Could not parse time: ${timeString}`);
-      return timeString;
+      return null;
     }
 
     try {
-      // 現在の日付を使用（実際のフライト日付が必要な場合は別途取得）
-      const today = new Date();
-      const localTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
-                                parsedTime.hours, parsedTime.minutes);
-
-      // 現地時間から日本時間への変換
-      const japanTime = new Date(localTime.toLocaleString("en-US", {timeZone: timezone}));
-      const japanTimeConverted = new Date(japanTime.getTime() + (japanTime.getTimezoneOffset() * 60000));
+      // 時間を分に変換
+      let totalMinutes = parsedTime.hours * 60 + parsedTime.minutes;
       
-      // 日本時間として表示
-      const japanTimeString = japanTimeConverted.toLocaleString("ja-JP", {
-        timeZone: "Asia/Tokyo",
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-
+      // 時差を適用
+      // 例：フィリピン19:20（日本より1時間遅れ）→ 日本20:20
+      // 19:20 = 1160分、-(-60) = +60分 → 1220分 = 20:20
+      totalMinutes = totalMinutes - offset;
+      
+      // 24時間を超えた場合の処理
+      if (totalMinutes >= 1440) {
+        totalMinutes -= 1440;
+      } else if (totalMinutes < 0) {
+        totalMinutes += 1440;
+      }
+      
+      // 時間と分に戻す
+      const japanHours = Math.floor(totalMinutes / 60);
+      const japanMinutes = totalMinutes % 60;
+      
+      // フォーマット
+      const japanTimeString = `${String(japanHours).padStart(2, '0')}:${String(japanMinutes).padStart(2, '0')}`;
+      
+      log(`Converted ${airportCode} ${timeString} → ${japanTimeString} JST (offset: ${offset} minutes)`);
       return `${japanTimeString} (JST)`;
     } catch (error) {
       log('Time conversion error:', error);
-      return timeString;
+      return null;
     }
   }
 
@@ -122,7 +163,7 @@
         
         if (departureTime.match(/\d{1,2}:\d{2}/)) {
           const convertedTime = convertToJapanTime(departureTime, departureAirport);
-          if (convertedTime !== departureTime && !departureTimeElement.querySelector('.japan-time')) {
+          if (convertedTime && !departureTimeElement.querySelector('.japan-time')) {
             // 日本時間を併記（既に追加されていない場合のみ）
             departureTimeElement.innerHTML = `
               ${departureTime}
@@ -143,7 +184,7 @@
         
         if (arrivalTime.match(/\d{1,2}:\d{2}/)) {
           const convertedTime = convertToJapanTime(arrivalTime, arrivalAirport);
-          if (convertedTime !== arrivalTime && !arrivalTimeElement.querySelector('.japan-time')) {
+          if (convertedTime && !arrivalTimeElement.querySelector('.japan-time')) {
             // 日本時間を併記（既に追加されていない場合のみ）
             arrivalTimeElement.innerHTML = `
               ${arrivalTime}
