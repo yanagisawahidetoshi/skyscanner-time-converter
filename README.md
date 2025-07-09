@@ -61,22 +61,11 @@ skyscanner-time-converter/
 ├── icon16.png             # 16x16 アイコン
 ├── icon48.png             # 48x48 アイコン
 ├── icon128.png            # 128x128 アイコン
-├── create_icons.py        # アイコン生成スクリプト
+├── LICENSE                # MITライセンス
 └── README.md              # このファイル
 ```
 
 ## 開発
-
-### アイコンの生成
-```bash
-# 仮想環境でPillowをインストール
-python3 -m venv venv
-source venv/bin/activate
-pip install Pillow
-
-# アイコンを生成
-python create_icons.py
-```
 
 ### デバッグ
 1. 拡張機能のポップアップでデバッグモードを有効にする
