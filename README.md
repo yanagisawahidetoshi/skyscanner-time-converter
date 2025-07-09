@@ -53,8 +53,7 @@
 ```
 skyscanner-time-converter/
 ├── manifest.json           # 拡張機能の設定
-├── content-script.js       # メインの時間変換ロジック
-├── airport-timezones.js    # 空港コードと時間帯のマッピング
+├── content-script.js       # メインの時間変換ロジック（空港データ含む）
 ├── popup.html             # ポップアップUI
 ├── popup.js               # ポップアップの制御
 ├── icon.svg               # アイコンファイル（SVG）
