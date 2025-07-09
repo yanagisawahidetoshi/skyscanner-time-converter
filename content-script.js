@@ -647,10 +647,10 @@
       return null;
     }
 
-    // 既に日本時間の空港は変換しない
+    // 既に日本時間の空港は「同じ時間」と表示
     if (offset === 0) {
       log(`${airportCode} is already in JST`);
-      return null;
+      return `${timeString} (JST同等)`;
     }
 
     const parsedTime = parseTimeString(timeString);
@@ -696,6 +696,20 @@
 
     let convertedCount = 0;
 
+    // 検索結果ページの時間変換
+    convertedCount += convertSearchResultTimes();
+    
+    // 詳細ページの時間変換
+    convertedCount += convertDetailPageTimes();
+
+    log(`Total converted ${convertedCount} times`);
+    return convertedCount;
+  }
+
+  // 検索結果ページの時間変換
+  function convertSearchResultTimes() {
+    let convertedCount = 0;
+    
     // スカイスキャナーの実際のHTML構造に基づいてフライト情報を抽出
     const flightCards = document.querySelectorAll('.BpkDividedCard_bpk-divided-card--horizontal-container__YmViN');
     
@@ -755,7 +769,85 @@
       }
     });
 
-    log(`Converted ${convertedCount} times`);
+    return convertedCount;
+  }
+
+  // 詳細ページの時間変換
+  function convertDetailPageTimes() {
+    let convertedCount = 0;
+    
+    // 詳細ページの時間要素を取得
+    const timeElements = document.querySelectorAll('.SegmentEndpoint_time__NWM3N .TimeWithOffsetTooltip_colorPrimary__OTkwN');
+    
+    timeElements.forEach(timeElement => {
+      const timeText = timeElement.textContent.trim();
+      
+      if (timeText.match(/\d{1,2}:\d{2}/) && !timeElement.querySelector('.japan-time')) {
+        // 空港コードを探す
+        const segmentEndpoint = timeElement.closest('.SegmentEndpoint_segmentEndpoint__MTQxY');
+        if (!segmentEndpoint) return;
+        
+        const airportElement = segmentEndpoint.querySelector('span[aria-hidden="true"]');
+        if (!airportElement) return;
+        
+        const airportText = airportElement.textContent.trim();
+        const airportCodeMatch = airportText.match(/^([A-Z]{3})\s/);
+        
+        if (airportCodeMatch) {
+          const airportCode = airportCodeMatch[1];
+          const convertedTime = convertToJapanTime(timeText, airportCode);
+          
+          if (convertedTime) {
+            // 日本時間を併記
+            timeElement.innerHTML = `
+              ${timeText}
+              <div class="japan-time" style="font-size: 0.9rem; color: #0066cc; font-weight: normal; margin-top: 2px;">
+                ${convertedTime}
+              </div>
+            `;
+            convertedCount++;
+            log(`Converted detail page time: ${timeText} → ${convertedTime} (${airportCode})`);
+          }
+        }
+      }
+    });
+
+    // レガシー詳細ページの時間要素も変換
+    const legacyTimeElements = document.querySelectorAll('.BpkText_bpk-text--base__MWRjY.TimeWithOffsetTooltip_colorPrimary__OTkwN');
+    
+    legacyTimeElements.forEach(timeElement => {
+      const timeText = timeElement.textContent.trim();
+      
+      if (timeText.match(/\d{1,2}:\d{2}/) && !timeElement.querySelector('.japan-time')) {
+        // 空港コードを探す
+        const segmentEndpoint = timeElement.closest('.SegmentEndpoint_segmentEndpoint__MTQxY');
+        if (!segmentEndpoint) return;
+        
+        const airportElement = segmentEndpoint.querySelector('span[aria-hidden="true"]');
+        if (!airportElement) return;
+        
+        const airportText = airportElement.textContent.trim();
+        const airportCodeMatch = airportText.match(/^([A-Z]{3})\s/);
+        
+        if (airportCodeMatch) {
+          const airportCode = airportCodeMatch[1];
+          const convertedTime = convertToJapanTime(timeText, airportCode);
+          
+          if (convertedTime) {
+            // 日本時間を併記
+            timeElement.innerHTML = `
+              ${timeText}
+              <div class="japan-time" style="font-size: 0.9rem; color: #0066cc; font-weight: normal; margin-top: 2px;">
+                ${convertedTime}
+              </div>
+            `;
+            convertedCount++;
+            log(`Converted legacy detail page time: ${timeText} → ${convertedTime} (${airportCode})`);
+          }
+        }
+      }
+    });
+
     return convertedCount;
   }
 
