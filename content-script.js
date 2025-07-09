@@ -647,10 +647,17 @@
       return null;
     }
 
-    // 既に日本時間の空港は「同じ時間」と表示
+    // 日本の空港は変換しない
+    const japaneseAirports = ['NRT', 'HND', 'KIX', 'NGO', 'FUK', 'OKA', 'CTS', 'ITM', 'SDJ', 'KOJ', 'KMI', 'KKJ', 'HIJ', 'OIT', 'KMJ', 'TAK'];
+    
     if (offset === 0) {
-      log(`${airportCode} is already in JST`);
-      return `${timeString} (JST同等)`;
+      if (japaneseAirports.includes(airportCode)) {
+        log(`${airportCode} is Japanese airport, no conversion needed`);
+        return null;
+      } else {
+        log(`${airportCode} is same timezone as JST`);
+        return `${timeString} (JST同等)`;
+      }
     }
 
     const parsedTime = parseTimeString(timeString);
