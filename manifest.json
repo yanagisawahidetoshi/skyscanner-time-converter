@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Skyscanner Time Converter",
+  "version": "1.0",
+  "description": "スカイスキャナーの検索結果の現地時間を日本時間に変換します",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.skyscanner.jp/*",
+    "https://www.skyscanner.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.skyscanner.jp/transport/flights/*",
+        "https://www.skyscanner.com/transport/flights/*"
+      ],
+      "js": [
+        "airport-timezones.js",
+        "content-script.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Time Converter"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
